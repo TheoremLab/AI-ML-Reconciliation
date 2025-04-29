@@ -1,3 +1,4 @@
+# Adds an allowlist to the secrets-checker workflow
 [allowlist]
 description = "Ignore safe files and safe strings"
 files = [
