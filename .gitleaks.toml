@@ -1,0 +1,5 @@
+[allowlist]
+description = "Ignore safe files and safe strings"
+files = [
+    "README.md"
+]
