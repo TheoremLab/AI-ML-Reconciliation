@@ -12,6 +12,7 @@ CSV_FILES = {
     "plan_rules_repo": "plan_rules_repository_2000_expanded.csv"
 }
 
+
 def load_csvs(data_dir, file_map):
     dataframes = {}
     for key, filename in file_map.items():
@@ -24,6 +25,7 @@ def load_csvs(data_dir, file_map):
             print(f"Missing: {file_path}")
             dataframes[key] = None
     return dataframes
+
 
 def check_employee_id_consistency(df_a, df_b, df_c, name_a, name_b, name_c):
     # Ensure all contain EmployeeID
@@ -60,6 +62,7 @@ def check_employee_id_consistency(df_a, df_b, df_c, name_a, name_b, name_c):
     if not missing_in_a and not missing_in_b and not missing_in_c:
         print("\nAll three datasets have consistent EmployeeID coverage.")
 
+
 def check_duplicate_transaction_ids(tpa_df):
     if 'TransactionID' not in tpa_df.columns:
         print("Error: TPA report is missing the 'TransactionID' column.")
@@ -75,6 +78,7 @@ def check_duplicate_transaction_ids(tpa_df):
             print(f"  TransactionID {txid} appears {count} times")
     else:
         print("\nNo duplicate TransactionIDs found in TPA Report.")
+
 
 def check_semantic_duplicate_loans(tpa_df):
     required_columns = {"EmployeeID", "Date", "LoanDisbursement"}
@@ -109,6 +113,7 @@ def check_semantic_duplicate_loans(tpa_df):
             print("-" * 40)
     else:
         print("\nNo semantic duplicate loan entries found in TPA Report.")
+
 
 def check_contribution_limits(sponsor_df, rules_df):
     required_sponsor_cols = {"EmployeeID", "PlanID", "ContributionAmount"}
@@ -145,6 +150,7 @@ def check_contribution_limits(sponsor_df, rules_df):
     else:
         print("\nNo contribution limit violations found.")
 
+
 def check_balance_consistency(statement_df, recordkeeper_df):
     required_statement_cols = {"EmployeeID", "FinalBalance"}
     required_recordkeeper_cols = {"EmployeeID", "AccountBalance"}
@@ -177,6 +183,7 @@ def check_balance_consistency(statement_df, recordkeeper_df):
         print(mismatches[["EmployeeID", "FinalBalance", "AccountBalance"]])
     else:
         print("\nAll FinalBalance values match AccountBalance within $1 tolerance.")
+
 
 def check_loan_disbursement_vs_outstanding(tpa_df, recordkeeper_df, tolerance=1.0):
     required_tpa_cols = {"EmployeeID", "LoanDisbursement"}
@@ -214,7 +221,7 @@ def check_loan_disbursement_vs_outstanding(tpa_df, recordkeeper_df, tolerance=1.
 
 
 if __name__ == "__main__":
-    # Load csvs into dataframes 
+    # Load csvs into dataframes
     dfs = load_csvs(DATA_DIR, CSV_FILES)
 
     # Iterate through dataframes and print them for a sanity check
@@ -225,7 +232,6 @@ if __name__ == "__main__":
     #         print(df.head())
     #     else:
     #         print(f"\n{name} not loaded")
-
 
     # Check for consistency of employee IDs across Plan Sponsor Feed, Recordkeeper DB, and Statement Output
     if all(dfs.get(key) is not None for key in ["plan_sponsor_feed", "recordkeeper_db", "statement_output"]):
@@ -254,4 +260,3 @@ if __name__ == "__main__":
     # Check loan disbursements vs loan outstanding amounts
     if dfs["tpa_report"] is not None and dfs["recordkeeper_db"] is not None:
         check_loan_disbursement_vs_outstanding(dfs["tpa_report"], dfs["recordkeeper_db"])
-
