@@ -1,0 +1,360 @@
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chatContainer {
+  display: flex;
+  height: 100vh;
+  font-family: 'Outfit', sans-serif;
+  animation: fadeInPage 0.6s ease-out;
+}
+
+/* === Sidebar === */
+.sidebar {
+  width: 250px;
+  background: linear-gradient(to bottom, #1e2a50, #1e1f2f);
+  color: white;
+  padding: 1rem;
+}
+
+.sidebar h2 {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.newChat {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: #0038a8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+}
+
+.recent h4 {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 0.5rem;
+}
+
+.recent ul {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.recent ul li {
+  font-size: 0.95rem;
+  color: #eee;
+  margin: 0.3rem 0;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recent ul li:hover {
+  background-color: #2a3b6d;
+}
+
+.activeChat {
+  background-color: #0038a8;
+  font-weight: bold;
+}
+
+.deleteChatButton {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.8em;
+  padding: 5px;
+  opacity: 0; /* Initially hide the button */
+  transition: opacity 0.2s ease-in-out;
+}
+
+.recent ul li:hover .deleteChatButton {
+  opacity: 1; /* Show button on hover */
+}
+
+.deleteChatButton:hover {
+  color: #ff4d4d; /* Change color on hover */
+}
+
+/* === Main Content === */
+.mainArea {
+  flex: 1;
+  color: white;
+  position: relative;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Top nav */
+.topNav {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  z-index: 5;
+}
+
+.logout {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.logout:hover {
+  opacity: 0.7;
+}
+
+/* Welcome message */
+.welcome {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome h1 {
+  font-size: 5.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.gradientText {
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: linear-gradient(to right, #0038a8, #6a11cb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.welcome p {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #f0f0f0;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* === Message List === */
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  width: 100%;
+  max-width: 800px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.messageBubble {
+  align-self: flex-end;
+  max-width: 60%;
+  padding: 0.8rem 1rem;
+  background-color: #3c54bd;
+  color: white;
+  border-radius: 1rem;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* File list in chat bubble */
+.fileList {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  font-size: 0.85rem;
+  color: #ddd;
+  list-style-type: none;
+}
+
+/* Chat Bar */
+.chatBar {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 3rem;
+  right: 3rem;
+  background-color: #444444;
+  border-radius: 30px;
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+/* Chat input wrapper to hold text + files */
+.inputContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.uploadedFilesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.fileDisplay {
+  font-size: 0.85rem;
+  background-color: #666666;
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.removeFile {
+  margin-left: 0.5rem;
+  cursor: pointer;
+  color: #ff7f7f;
+  font-weight: bold;
+}
+
+.chatBar input {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 20px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.chatBar button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.chatBar img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+/* === DB Config Panel === */
+.dbConfig {
+  position: absolute;
+  bottom: 5rem;
+  right: 2rem;
+  background-color: #f8f8f8;
+  color: #333;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 260px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.dbConfig h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #0038a8;
+}
+
+.dbConfig input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.dbButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.dbButtons button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.dbButtons button:first-child {
+  background-color: #0038a8;
+  color: white;
+}
+
+.dbButtons button:last-child {
+  background-color: #ccc;
+}
+
+/* === Industries === */
+.industries {
+  position: absolute;
+  bottom: 6.5rem;
+  left: 2.5rem;
+  background-color: #f8f8f8;
+  border-radius: 1rem;
+  padding: 1rem;
+  width: 260px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.searchInput {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+.industryList {
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.industryList button {
+  background-color: #0038a8;
+  color: white;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.industryList button:hover {
+  background-color: #002c8b;
+}

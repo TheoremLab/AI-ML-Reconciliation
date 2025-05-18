@@ -1,0 +1,100 @@
+@keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+.loginPage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 90vh;
+  }
+  
+  .loginBox {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    width: 400px;
+    height: 600px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    animation: fadeIn 1s ease-out;
+  
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem; 
+    text-align: left;
+    padding: 1rem 0; 
+  }
+  
+  .form label {
+    font-weight: bold;
+    color: #0645b9;
+    margin-left: 0.5rem; 
+  }
+  
+  .form input {
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 2rem;
+    outline: none;
+    font-size: 1rem;
+  }
+  
+  .form button {
+    background-color: #0038a8;
+    color: white;
+    font-weight: bold;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem; 
+    margin-top: 2rem; 
+  }
+  
+  .form button:hover {
+    background-color: #002c8b;
+  }
+
+  .logo {
+    width: 80px;
+    height: auto;
+    display: block;
+    margin: 0 auto 1.5rem;
+  }
+
+  .signupPrompt {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+  .signupPrompt span {
+  color: #0038a8;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+  .signupPrompt span:hover {
+  text-decoration: underline;
+}
+
+.errorMessage {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+  margin-left: 0.5rem;
+}
