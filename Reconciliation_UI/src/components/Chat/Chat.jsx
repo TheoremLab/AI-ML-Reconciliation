@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./Chat.module.css";
+// import { saveFile, getAllFiles } from '../../storage'; 
 
 const Chat = () => {
   const [chatMessages, setChatMessages] = useState([]);
@@ -13,6 +14,9 @@ const Chat = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [activeChatId, setActiveChatId] = useState(null);
+
+  // If you want to keep track of uploaded files across renders in the future, expand this functionality
+  const uploadedFilesRef = React.useRef([]);
 
   const username = localStorage.getItem("username") || "User";
 
@@ -34,36 +38,173 @@ const Chat = () => {
     ind.toLowerCase().includes(industrySearch.toLowerCase())
   );
 
-  const handleUpload = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
+  // Function to get the targeted files based on keywords to send to backend
+  const getTargetedFiles = (messages) => {
+    const keywords = [
+      "plan_sponsor",
+      "recordkeeper",
+      "tpa_report",
+      "statement_output",
+      "plan_rules"
+    ];
 
-    input.onchange = (event) => {
-      const files = Array.from(event.target.files);
-      const fileReaders = files.map(file => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            resolve({
+    const found = {};
+
+    // Go through all messages to collect matching files
+    for (const msg of messages) {
+      if (msg.sender !== "user" || !msg.files) continue;
+
+      for (const file of msg.files) {
+        for (const keyword of keywords) {
+          if (
+            file.name.toLowerCase().includes(keyword) &&
+            !found[keyword]
+          ) {
+            found[keyword] = {
               name: file.name,
-              type: file.type,
-              size: file.size,
-              content: reader.result.split(',')[1] // Remove the data URL prefix
-            });
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      });
+              content: file.content, // full base64 string (e.g., data:text/csv;base64,...)
+            };
+          }
+        }
+      }
+    }
 
-      Promise.all(fileReaders).then(fileData => {
-        setUploadedFiles(prev => [...prev, ...fileData]);
-      });
-    };
-
-    input.click();
+    // Return just the first matching file for each keyword
+    return Object.values(found);
   };
+
+  // Function to send the targeted files to the backend
+  const sendTargetedFilesToBackend = async (allMessages, setChatMessages, activeChatId, setConversations) => {
+    const selectedFiles = getTargetedFiles(allMessages);
+    console.log("Entered sendTargetedFilesToBackend");
+
+    if (selectedFiles.length === 0) {
+      console.warn("No matching files found.");
+      const systemMessage = {
+        sender: "system",
+        text: "No matching files found to analyze.",
+        files: []
+      };
+      setChatMessages(prev => [...prev, systemMessage]);
+      return;
+    }
+    try {
+      const response = await fetch("http://localhost:5000/submit-batch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ files: selectedFiles })
+      });
+
+      const data = await response.json();
+      console.log("Backend response:", data);
+
+      const systemMessage = {
+        sender: "system",
+        text: data.result,
+        files: []
+      };
+
+      setChatMessages(prev => [...prev, systemMessage]);
+
+      if (activeChatId) {
+        setConversations(prev =>
+          prev.map(c =>
+            c.id === activeChatId
+              ? { ...c, messages: [...prev, systemMessage] }
+              : c
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Failed to send files:", err);
+
+      const errorMessage = {
+        sender: "system",
+        text: "Failed to send files to backend.",
+        files: []
+      };
+
+      setChatMessages(prev => [...prev, errorMessage]);
+    }
+  };
+
+  // Get the most recent message (from the user) that includes files
+  function getLastUploadedFiles(chatMessages) {
+    const reversed = [...chatMessages].reverse();
+    for (const msg of reversed) {
+      if (msg.sender === "user" && msg.files && msg.files.length > 0) {
+        return msg.files;
+      }
+    }
+    return [];
+  }
+
+  function getAllUploadedFiles(chatMessages) {
+    return chatMessages
+      .filter(m => m.sender === "user" && m.files?.length)
+      .flatMap(m => m.files);
+  }
+
+
+  useEffect(() => {
+  console.log("Updated uploadedFiles state:", uploadedFiles);
+}, [uploadedFiles]);
+
+  // check if the browser supports persistent storage
+  // and request it if it does. Currently everything is stored in localStorage
+  useEffect(() => {
+    const requestPersistence = async () => {
+      if (navigator.storage && navigator.storage.persist) {
+        const granted = await navigator.storage.persist();
+        if (!granted) {
+          console.log("Browser did not grant persistent storage. Your data may be cleared automatically.");
+        } else {
+          console.log("Persistent storage granted.");
+        }
+      }
+    };
+    requestPersistence();
+  }, []);
+
+
+const handleUpload = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.multiple = true;
+
+  input.onchange = async (event) => {
+    const files = Array.from(event.target.files);
+
+    const fileReaders = files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            content: reader.result,
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const newFiles = await Promise.all(fileReaders);
+
+    // Update both ref and state
+    uploadedFilesRef.current = [...uploadedFilesRef.current, ...newFiles];
+    setUploadedFiles([...uploadedFilesRef.current]);
+
+    setShowIndustries(false);
+  };
+
+  input.click();
+};
+
 
   const handleSend = () => {
     if (!chatInput.trim() && uploadedFiles.length === 0) return;
@@ -74,8 +215,23 @@ const Chat = () => {
       files: uploadedFiles
     };
 
+    // Add the new message to the list of messages
     const updatedMessages = [...chatMessages, newMessage];
     setChatMessages(updatedMessages);
+    
+    // debug stuff
+    console.log("Chat messages:", updatedMessages);
+    window.updatedMessages = updatedMessages;
+
+    // Check if the message contains the word "analyze" and send files to backend if it does
+    if (chatInput.toLowerCase().includes("analyze")) {
+      sendTargetedFilesToBackend(
+        [...chatMessages, newMessage],
+        setChatMessages,
+        activeChatId,
+        setConversations
+      );
+    }
 
     if (activeChatId) {
       setConversations(prev =>
@@ -97,6 +253,7 @@ const Chat = () => {
 
     setChatInput("");
     setUploadedFiles([]);
+    uploadedFilesRef.current = [];
   };
 
   const handleNewChat = () => {
@@ -184,13 +341,18 @@ const Chat = () => {
 
         <div className={styles.messageList}>
           {chatMessages.map((msg, idx) => (
-            <div key={idx} className={styles.messageBubble}>
+            <div
+              key={idx}
+              className={`${styles.messageBubble} ${msg.sender === "system" ? styles.system : styles.user}`}
+            >
               <div>{msg.text}</div>
               {msg.files && msg.files.length > 0 && (
                 <ul className={styles.fileList}>
                   {msg.files.map((file, i) => (
                     <li key={i}>
-                       <a href={`data:${file.type};base64,${file.content}`} download={file.name}>{file.name}</a>
+                      <a href={`data:${file.type};base64,${file.content}`} download={file.name}>
+                        {file.name}
+                      </a>
                     </li>
                   ))}
                 </ul>
@@ -198,6 +360,7 @@ const Chat = () => {
             </div>
           ))}
         </div>
+
 
         {showIndustries && (
           <div className={styles.industries}>
@@ -257,6 +420,7 @@ const Chat = () => {
               </div>
             )}
           </div>
+
 
           <button onClick={handleSend}>Send</button>
 

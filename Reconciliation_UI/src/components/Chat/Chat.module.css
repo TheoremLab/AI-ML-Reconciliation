@@ -9,6 +9,24 @@
   }
 }
 
+/* === System replies === */
+.messageBubble.system {
+  align-self: flex-start;
+  background-color: #666;
+}
+.user {
+  align-self: flex-end;
+  background-color: #3c54bd;
+  color: white;
+}
+
+.system {
+  align-self: flex-start;
+  background-color: #6c757d;
+  color: white;
+}
+
+
 .chatContainer {
   display: flex;
   height: 100vh;
@@ -165,11 +183,14 @@
   flex-direction: column;
   gap: 0.8rem;
   padding: 1rem;
+  padding-bottom: 6rem; /* Space for chat bar */
   width: 100%;
   max-width: 800px;
   max-height: 55vh;
   overflow-y: auto;
 }
+
+
 
 .messageBubble {
   align-self: flex-end;
