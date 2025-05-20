@@ -1,2 +1,3 @@
 # Compiling a list of technologies that need to be pip installed for the rules engine
 pandas
+tabulate 

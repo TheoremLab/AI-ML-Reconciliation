@@ -1,7 +1,12 @@
-import os
+import sys
+import base64
 import pandas as pd
+import json
+from io import StringIO
+import os
+from tabulate import tabulate
 
-# === Configuration ===
+# === Configuration, currently unused ===
 DATA_DIR = "../data"
 
 CSV_FILES = {
@@ -60,7 +65,7 @@ def check_employee_id_consistency(df_a, df_b, df_c, name_a, name_b, name_c):
             print(f"  {eid}")
 
     if not missing_in_a and not missing_in_b and not missing_in_c:
-        print("\nAll three datasets have consistent EmployeeID coverage.")
+        print("\nPlan Sponsor Feed, Recordkeeper DB, and Statement Output File datasets have consistent EmployeeID coverage.")
 
 
 def check_duplicate_transaction_ids(tpa_df):
@@ -148,7 +153,7 @@ def check_contribution_limits(sponsor_df, rules_df):
         print("\nContribution limit violations found:")
         print(violations)
     else:
-        print("\nNo contribution limit violations found.")
+        print("\nNo contribution limit violations found between plan sponsor feed and plan rules repository.")
 
 
 def check_balance_consistency(statement_df, recordkeeper_df):
@@ -179,8 +184,10 @@ def check_balance_consistency(statement_df, recordkeeper_df):
     mismatches = merged[abs(merged["FinalBalance"] - merged["AccountBalance"]) > 1.0]
 
     if not mismatches.empty:
-        print("\nFinalBalance and AccountBalance mismatches (tolerance > $1):")
-        print(mismatches[["EmployeeID", "FinalBalance", "AccountBalance"]])
+        print("\nFinalBalance and AccountBalance mismatches found between Statement Output File and Recordkeeper DB:")
+        print()
+        print(mismatches[["EmployeeID", "FinalBalance", "AccountBalance"]].head(10).to_markdown(index=False))
+        print("\n[Showing first 10 of {} rows]".format(len(mismatches)))
     else:
         print("\nAll FinalBalance values match AccountBalance within $1 tolerance.")
 
@@ -214,49 +221,93 @@ def check_loan_disbursement_vs_outstanding(tpa_df, recordkeeper_df, tolerance=1.
     mismatches = merged[abs(merged["LoanDisbursement"] - merged["LoanOutstanding"]) > tolerance]
 
     if not mismatches.empty:
-        print("\nLoan disbursement totals do not match loan outstanding values:")
-        print(mismatches[["EmployeeID", "LoanDisbursement", "LoanOutstanding"]])
+        print("Loan disbursement totals do not match loan outstanding values (tolerance > $1):")
+        print("Affected files: tpa_report, recordkeeper_db")
+        print()
+        preview = mismatches.head(10)
+        print(tabulate(preview, headers="keys", tablefmt="github", showindex=False))
+        print(f"\n[Showing first 10 of {len(mismatches)} mismatches]")
     else:
-        print("\nAll loan disbursement totals match loan outstanding values within tolerance.")
+        print("No mismatches found between LoanDisbursement and LoanOutstanding within tolerance range.")
 
 
-if __name__ == "__main__":
-    # Load csvs into dataframes
-    dfs = load_csvs(DATA_DIR, CSV_FILES)
+def main():
+    # print("entered backend script")
 
-    # Iterate through dataframes and print them for a sanity check
-    # for name, df in dfs.items():
-    #     if df is not None:
-    #         print(f"\n{name} loaded with {len(df)} rows")
-    #         print("First 5 rows:")
-    #         print(df.head())
+    expected_keys = {
+        "plan_sponsor": "plan_sponsor_feed",
+        "recordkeeper": "recordkeeper_db",
+        "tpa_report": "tpa_report",
+        "statement_output": "statement_output",
+        "plan_rules": "plan_rules_repo"
+    }
+
+    # Step 1: Parse CLI args into a dictionary
+    file_paths = {}
+    for arg in sys.argv[1:]:
+        if "=" in arg:
+            key, path = arg.split("=", 1)
+            file_paths[key.strip()] = path.strip()
+
+    # Step 2: Load each expected file or report an error
+    dfs = {}
+    missing_files = []
+
+    for key, df_key in expected_keys.items():
+        path = file_paths.get(key)
+        if not path:
+            missing_files.append(f"Missing argument for `{key}` file.")
+            dfs[df_key] = None
+            continue
+
+        if not os.path.exists(path):
+            missing_files.append(f"File not found at path: {path}")
+            dfs[df_key] = None
+            continue
+
+        try:
+            dfs[df_key] = pd.read_csv(path)
+        except Exception as e:
+            missing_files.append(f"Failed to load `{key}` from {path}: {e}")
+            dfs[df_key] = None
+
+    # Step 3: Report status of all files
+    # print("File Load Summary:")
+    # for key, df_key in expected_keys.items():
+    #     path = file_paths.get(key)
+    #     if dfs[df_key] is not None:
+    #         print(f"  [OK] {df_key} loaded from: {path}")
     #     else:
-    #         print(f"\n{name} not loaded")
+    #         if not path:
+    #             print(f"  [Missing Argument] No path provided for: {df_key}")
+    #         elif not os.path.exists(path):
+    #             print(f"  [Not Found] Expected file at: {path}")
+    #         else:
+    #             print(f"  [Failed to Load] {df_key} from: {path}")
 
-    # Check for consistency of employee IDs across Plan Sponsor Feed, Recordkeeper DB, and Statement Output
-    if all(dfs.get(key) is not None for key in ["plan_sponsor_feed", "recordkeeper_db", "statement_output"]):
+    # print("")  # blank line before validations
+
+
+    # Step 4: Run checks conditionally
+    if all(dfs.get(k) is not None for k in ["plan_sponsor_feed", "recordkeeper_db", "statement_output"]):
         check_employee_id_consistency(
-            dfs["plan_sponsor_feed"],
-            dfs["recordkeeper_db"],
-            dfs["statement_output"],
-            "Plan Sponsor Feed",
-            "Recordkeeper DB",
-            "Statement Output"
+            dfs["plan_sponsor_feed"], dfs["recordkeeper_db"], dfs["statement_output"],
+            "Plan Sponsor", "Recordkeeper", "Statement Output"
         )
 
-    # Check for duplicate TransactionIDs in TPA Report
     if dfs["tpa_report"] is not None:
         check_duplicate_transaction_ids(dfs["tpa_report"])
         check_semantic_duplicate_loans(dfs["tpa_report"])
 
-    # Check for contribution limit violations per plan
     if dfs["plan_sponsor_feed"] is not None and dfs["plan_rules_repo"] is not None:
         check_contribution_limits(dfs["plan_sponsor_feed"], dfs["plan_rules_repo"])
 
-    # Check FinalBalance vs AccountBalance within $1 tolerance
     if dfs["statement_output"] is not None and dfs["recordkeeper_db"] is not None:
         check_balance_consistency(dfs["statement_output"], dfs["recordkeeper_db"])
 
-    # Check loan disbursements vs loan outstanding amounts
     if dfs["tpa_report"] is not None and dfs["recordkeeper_db"] is not None:
         check_loan_disbursement_vs_outstanding(dfs["tpa_report"], dfs["recordkeeper_db"])
+
+
+if __name__ == "__main__":
+    main()
