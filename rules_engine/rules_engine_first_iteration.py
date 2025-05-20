@@ -228,7 +228,7 @@ def check_loan_disbursement_vs_outstanding(tpa_df, recordkeeper_df, tolerance=1.
         print(tabulate(preview, headers="keys", tablefmt="github", showindex=False))
         print(f"\n[Showing first 10 of {len(mismatches)} mismatches]")
     else:
-        print("No mismatches found between LoanDisbursement and LoanOutstanding within tolerance range.")
+        print("\nNo mismatches found between LoanDisbursement and LoanOutstanding within tolerance range.")
 
 
 def main():

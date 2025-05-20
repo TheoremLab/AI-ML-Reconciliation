@@ -1,0 +1,4 @@
+PlanID,EligibilityAge,VestingYears,MatchingPercentage,MaxContributionLimit
+P2000,21,3,50,5000
+P2001,25,4,100,6000
+P2002,30,5,75,5500

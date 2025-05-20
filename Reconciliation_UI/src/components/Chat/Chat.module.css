@@ -331,9 +331,10 @@
   color: white;
 }
 
-.dbButtons button:last-child {
+/* currently we only have one button for "save" 
+  .dbButtons button:last-child {
   background-color: #ccc;
-}
+} */
 
 /* === Industries === */
 .industries {

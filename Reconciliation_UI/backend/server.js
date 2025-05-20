@@ -11,15 +11,48 @@ const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
 
-const pool = new Pool({
+// Create default Postgres DB config
+let dbConfig = {
   user: "postgres",
   host: "localhost",
   database: "reconciliation",
   password: "postgres",
   port: 5432,
+};
+
+// Check if a custom DB config file exists, and if so, load it
+const configPath = path.resolve(__dirname, "db-config.json");
+if (fs.existsSync(configPath)) {
+  try {
+    const raw = fs.readFileSync(configPath);
+    const customConfig = JSON.parse(raw);
+    dbConfig = { ...dbConfig, ...customConfig };
+    console.log("Loaded DB config from file.");
+  } catch (err) {
+    console.warn("Failed to load DB config from file. Using default config.");
+  }
+}
+
+// Create a new pool instance with the DB config
+const pool = new Pool(dbConfig);
+
+// endpoint for frontend to communicate DB config to backend, which is then saved
+app.post("/save-db-config", (req, res) => {
+  const config = req.body;
+
+  const required = ["user", "host", "database", "password", "port"];
+  for (const key of required) {
+    if (!config[key]) {
+      return res.status(400).json({ success: false, message: `Missing: ${key}` });
+    }
+  }
+
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  return res.json({ success: true, message: "Config saved." });
 });
 
-// debug endpoint
+
+// debug endpoint for liveness
 app.get("/", (req, res) => {
   res.send("Backend is alive and reachable");
 });

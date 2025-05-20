@@ -1,0 +1,7 @@
+{
+  "host": "default",
+  "port": "default",
+  "database": "reconciliation",
+  "user": "admin",
+  "password": "admin"
+}

@@ -13,7 +13,16 @@ const Chat = () => {
     const saved = localStorage.getItem("conversations");
     return saved ? JSON.parse(saved) : [];
   });
+
   const [activeChatId, setActiveChatId] = useState(null);
+
+  const [dbConfig, setDbConfig] = useState({
+    host: "",
+    port: "",
+    database: "",
+    user: "",
+    password: ""
+  }); 
 
   // If you want to keep track of uploaded files across renders in the future, expand this functionality
   const uploadedFilesRef = React.useRef([]);
@@ -50,8 +59,9 @@ const Chat = () => {
 
     const found = {};
 
-    // Go through all messages to collect matching files
-    for (const msg of messages) {
+    // Go through messages in reverse to pick the most recent files
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
       if (msg.sender !== "user" || !msg.files) continue;
 
       for (const file of msg.files) {
@@ -62,14 +72,13 @@ const Chat = () => {
           ) {
             found[keyword] = {
               name: file.name,
-              content: file.content, // full base64 string (e.g., data:text/csv;base64,...)
+              content: file.content,
             };
           }
         }
       }
     }
 
-    // Return just the first matching file for each keyword
     return Object.values(found);
   };
 
@@ -384,15 +393,63 @@ const handleUpload = () => {
         {showDBConfig && (
           <div className={styles.dbConfig}>
             <h3>Database Configuration</h3>
-            <input type="text" placeholder="Server Type..." />
-            <input type="text" placeholder="Host Name..." />
-            <input type="text" placeholder="Port..." />
-            <input type="text" placeholder="Database..." />
-            <input type="text" placeholder="Username..." />
-            <input type="password" placeholder="Password..." />
+            <input
+              type="text"
+              placeholder="Host Name..."
+              value={dbConfig.host}
+              onChange={(e) => setDbConfig(prev => ({ ...prev, host: e.target.value }))}
+            />
+            <input
+              type="text"
+              placeholder="Port..."
+              value={dbConfig.port}
+              onChange={(e) => setDbConfig(prev => ({ ...prev, port: e.target.value }))}
+            />
+            <input
+              type="text"
+              placeholder="Database..."
+              value={dbConfig.database}
+              onChange={(e) => setDbConfig(prev => ({ ...prev, database: e.target.value }))}
+            />
+            <input
+              type="text"
+              placeholder="Username..."
+              value={dbConfig.user}
+              onChange={(e) => setDbConfig(prev => ({ ...prev, user: e.target.value }))}
+            />
+            <input
+              type="password"
+              placeholder="Password..."
+              value={dbConfig.password}
+              onChange={(e) => setDbConfig(prev => ({ ...prev, password: e.target.value }))}
+            />
             <div className={styles.dbButtons}>
-              <button>Save</button>
-              <button onClick={() => setShowDBConfig(false)}>Cancel</button>
+              <button
+                onClick={async () => {
+                  try {
+                    // console.log("clicked save DB button");
+                    const response = await fetch("http://localhost:5000/save-db-config", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(dbConfig)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                      alert("Database configuration saved successfully.");
+                      setShowDBConfig(false);
+                    } else {
+                      alert("Failed to save configuration: " + result.message);
+                    }
+                  } catch (err) {
+                    console.error("Failed to save DB config:", err);
+                    alert("Error saving DB configuration. See console.");
+                  }
+                }}
+              >
+                Save
+              </button>
+
             </div>
           </div>
         )}
@@ -424,7 +481,7 @@ const handleUpload = () => {
 
           <button onClick={handleSend}>Send</button>
 
-          <button onClick={() => setShowDBConfig(true)}>
+          <button onClick={() => setShowDBConfig(prev => !prev)}>
             <img src="/assets/Database/database.png" alt="Database Icon" />
           </button>
         </div>
